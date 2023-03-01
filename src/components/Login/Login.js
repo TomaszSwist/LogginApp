@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useReducer } from 'react'
+import React, { useState, useEffect, useReducer, useContext, useRef } from 'react'
 
 import Card from '../UI/Card/Card'
 import classes from './Login.module.css'
 import Button from '../UI/Button/Button'
 import Input from '../UI/Input/Input'
+import AuthContext from '../../store/auth-context'
 
 const emailReducer = (state, action) => {
 	if (action.type === 'USER_INPUT') {
@@ -26,10 +27,15 @@ const passwordReducer = (state, action) => {
 }
 
 const Login = props => {
+	const ctx = useContext(AuthContext)
+
 	const [formIsValid, setFormIsValid] = useState(false)
 
 	const [emailState, dispatchEmail] = useReducer(emailReducer, { value: '', isValid: null })
 	const [passwordState, dispatchPassword] = useReducer(passwordReducer, { value: '', isValid: null })
+
+	const emailInputRef = useRef()
+	const passwordInputRef = useRef()
 
 	useEffect(() => {
 		const timer = setTimeout(() => {
@@ -57,13 +63,20 @@ const Login = props => {
 
 	const submitHandler = event => {
 		event.preventDefault()
-		props.onLogin(emailState.value, passwordState.value)
+		if (formIsValid) {
+			ctx.onLogin(emailState.value, passwordState.value)
+		} else if (!emailState.isValid) {
+			emailInputRef.current.focus()
+		} else {
+			passwordInputRef.current.focus()
+		}
 	}
 
 	return (
 		<Card className={classes.login}>
 			<form onSubmit={submitHandler}>
 				<Input
+					ref={emailInputRef}
 					type='email'
 					label='E-mail'
 					inputState={emailState.value}
@@ -71,6 +84,7 @@ const Login = props => {
 					validateHandle={validateEmailHandler}
 				/>
 				<Input
+					ref={passwordInputRef}
 					type='password'
 					label='Password'
 					inputState={passwordState.value}
@@ -78,7 +92,7 @@ const Login = props => {
 					validateHandle={validatePasswordHandler}
 				/>
 				<div className={classes.actions}>
-					<Button type='submit' className={classes.btn} disabled={!formIsValid}>
+					<Button type='submit' className={classes.btn}>
 						Login
 					</Button>
 				</div>
